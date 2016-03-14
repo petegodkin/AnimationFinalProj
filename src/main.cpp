@@ -30,6 +30,7 @@ GLFWwindow *window; // Main application window
 string RESOURCE_DIR = ""; // Where the resources are loaded from
 
 shared_ptr<Camera> camera;
+shared_ptr<Program> jelloProg;
 shared_ptr<Program> prog;
 shared_ptr<Program> progSimple;
 shared_ptr<Scene> scene;
@@ -104,15 +105,22 @@ static void init()
 	
 	prog = make_shared<Program>();
 	prog->setVerbose(true); // Set this to true when debugging.
-	prog->setShaderNames(RESOURCE_DIR + "phong_vert.glsl", RESOURCE_DIR + "phong_frag.glsl");
+	prog->setShaderNames(RESOURCE_DIR + "phong_vert.glsl", RESOURCE_DIR + "face_frag.glsl");
 	prog->init();
 	prog->addUniform("P");
 	prog->addUniform("MV");
-	//prog->addUniform("kdFront");
-	//prog->addUniform("kdBack");
 	prog->addAttribute("vertPos");
 	prog->addAttribute("vertNor");
 	//prog->addAttribute("vertTex");
+
+	jelloProg = make_shared<Program>();
+    jelloProg->setVerbose(true); // Set this to true when debugging.
+    jelloProg->setShaderNames(RESOURCE_DIR + "phong_vert.glsl", RESOURCE_DIR + "phong_frag.glsl");
+    jelloProg->init();
+    jelloProg->addUniform("P");
+    jelloProg->addUniform("MV");
+    jelloProg->addAttribute("vertPos");
+    jelloProg->addAttribute("vertNor");
 	
 	camera = make_shared<Camera>();
 
@@ -205,15 +213,22 @@ void render()
 	progSimple->unbind();
 
     if(keyToggles[(unsigned)'n']) {
-        scene->drawNormals(MV, prog, P);
+        scene->drawNormals(MV, P);
+    }
+    if(keyToggles[(unsigned)'t']) {
+        scene->drawTrajectory(MV, P);
     }
 	// Draw scene
 	prog->bind();
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
 	MV->pushMatrix();
-	scene->draw(MV, prog);
-	MV->popMatrix();
+	scene->drawFaces(MV, prog);
 	prog->unbind();
+	jelloProg->bind();
+	glUniformMatrix4fv(jelloProg->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
+	scene->draw(MV, jelloProg);
+	MV->popMatrix();
+	jelloProg->unbind();
 	
 	//////////////////////////////////////////////////////
 	// Cleanup

@@ -6,6 +6,8 @@
 #include "Shape.h"
 #include "Program.h"
 #include "FreakFace.h"
+#include "GLSL.h"
+#include "MatrixStack.h"
 
 using namespace std;
 using namespace Eigen;
@@ -42,16 +44,21 @@ void Scene::load(const string &RESOURCE_DIR)
 	
 	faceShape = make_shared<Shape>();
 	faceShape->loadMesh(RESOURCE_DIR + "freak_face.obj");
+
+	sphereShape = make_shared<Shape>();
+    sphereShape->loadMesh(RESOURCE_DIR + "sphere2.obj");
+
 	
-	auto freak = make_shared<FreakFace>(faceShape);
-	//faces.push_back(freak);
-	freak->r = 0.1;
-	freak->x = Vector3d(0.0, 0.2, 0.0);
+	auto freak = make_shared<FreakFace>(faceShape, sphereShape);
+	faces.push_back(freak);
+	freak->r = 1.0;
+	freak->x = Vector3d(0.0, 2.0, 0.0);
 }
 
 void Scene::init()
 {
 	faceShape->init();
+	sphereShape->init();
 	gelatin->init();
 }
 
@@ -115,16 +122,53 @@ void Scene::step()
 	gelatin->step(h, grav, faces);
 }
 
-void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) const
+void Scene::drawFaces(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) const
 {
 	//glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(1.0, 1.0, 1.0).data());
 	for(int i = 0; i < (int)faces.size(); ++i) {
 		faces[i]->draw(MV, prog);
 	}
+}
+
+void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) const
+{
 	gelatin->draw(MV, prog);
 }
 
-void Scene::drawNormals(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog, shared_ptr<MatrixStack> P) const
+void Scene::drawNormals(shared_ptr<MatrixStack> MV, shared_ptr<MatrixStack> P) const
 {
-	gelatin->drawNormals(MV, prog, P);
+	gelatin->drawNormals(MV, P);
+}
+
+void Scene::drawTrajectory(shared_ptr<MatrixStack> MV, shared_ptr<MatrixStack> P) const
+{
+    GLSL::checkError(GET_FILE_LINE);
+	glMatrixMode(GL_PROJECTION);
+	GLSL::checkError(GET_FILE_LINE);
+	glPushMatrix();
+	glLoadMatrixf(P->topMatrix().data());
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadMatrixf(MV->topMatrix().data());
+    glBegin(GL_LINE_STRIP);
+
+	Vector3d cur = gelatin->getCenter();
+	double mass = gelatin->getMass();
+	Vector3d vel = cur + Vector3d(-1, cannonDir(0), cannonDir(1)).normalized();
+    const int numSteps = 30;
+    const double step = 0.1;
+    for (int i = 0; i < numSteps; i++) {
+        glVertex3f(cur(0), cur(1), cur(2));
+        cur += vel * step;
+        vel += step * mass * grav;
+    }
+
+    glEnd();
+
+    glPopMatrix();
+
+    // Pop projection matrix
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
 }

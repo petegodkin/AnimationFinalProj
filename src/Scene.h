@@ -31,7 +31,9 @@ public:
 	void step();
 	
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prog) const;
-	void drawNormals(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack> P) const;
+	void drawFaces(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prog) const;
+	void drawNormals(std::shared_ptr<MatrixStack> MV, std::shared_ptr<MatrixStack> P) const;
+	void drawTrajectory(std::shared_ptr<MatrixStack> MV, std::shared_ptr<MatrixStack> P) const;
 	
 	double getTime() const { return t; }
 
@@ -41,8 +43,10 @@ private:
 	double t;
 	double h;
 	Eigen::Vector3d grav;
+	Eigen::Vector2d cannonDir;
 	
 	std::shared_ptr<Shape> faceShape;
+	std::shared_ptr<Shape> sphereShape;
 	std::shared_ptr<Gelatin> gelatin;
 	std::vector< std::shared_ptr<FreakFace> > faces;
 };

@@ -39,16 +39,20 @@ public:
 
 	void init();
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm) const;
-	void drawNormals(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm, std::shared_ptr<MatrixStack> P) const;
+	void drawNormals(std::shared_ptr<MatrixStack> MV, std::shared_ptr<MatrixStack> P) const;
 
 	void jump();
 	void move(Eigen::Vector3d vel);
+
+	Eigen::Vector3d getCenter();
+	double getMass();
 
 private:
 	int rows;
 	int cols;
 	int layers;
 	int n;
+	double mass;
 	//friction against the ground
 	const double friction = 0.8;
 	Eigen::Vector2d damping;

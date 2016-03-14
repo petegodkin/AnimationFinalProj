@@ -45,6 +45,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 	this->cols = cols;
 	this->layers = layers;
 	this->damping = damping;
+	this->mass = mass;
 
 	// Create particles
 	n = 0;
@@ -186,6 +187,15 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 
 Gelatin::~Gelatin()
 {
+}
+
+Vector3d Gelatin::getCenter() {
+    int index = (layers/2) * rows * cols + (rows/2) * cols + cols/2;
+    return particles[index]->x;
+}
+
+double Gelatin::getMass() {
+    return mass;
 }
 
 void Gelatin::tare()
@@ -562,12 +572,12 @@ void Gelatin::init()
 }
 
 
-void Gelatin::drawNormals(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prgm, shared_ptr<MatrixStack> P) const
+void Gelatin::drawNormals(shared_ptr<MatrixStack> MV, shared_ptr<MatrixStack> P) const
 {
 
-    GLSL::checkError(GET_FILE_LINE);
+    //GLSL::checkError(GET_FILE_LINE);
 	glMatrixMode(GL_PROJECTION);
-	GLSL::checkError(GET_FILE_LINE);
+	//GLSL::checkError(GET_FILE_LINE);
 	glPushMatrix();
 	glLoadMatrixf(P->topMatrix().data());
 

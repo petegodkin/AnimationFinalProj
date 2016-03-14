@@ -18,7 +18,7 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	FreakFace();
-	FreakFace(const std::shared_ptr<Shape> shape);
+	FreakFace(const std::shared_ptr<Shape> face, const std::shared_ptr<Shape> sphere);
 	virtual ~FreakFace();
 	void tare();
 	void reset();
@@ -34,9 +34,11 @@ public:
 	bool fixed;
 
 private:
-    const double objScale = 0.1;
+    const double objScale = 0.015;
+    Eigen::Vector3d offset;
 
 	const std::shared_ptr<Shape> shape;
+	const std::shared_ptr<Shape> collisionSphere;
 };
 
 #endif
