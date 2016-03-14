@@ -41,12 +41,15 @@ public:
 	void drawNormals(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm, std::shared_ptr<MatrixStack> P) const;
 
 	void jump();
+	void move(Eigen::Vector3d vel);
 
 private:
 	int rows;
 	int cols;
 	int layers;
 	int n;
+	//friction against the ground
+	const double friction = 0.8;
 	Eigen::Vector2d damping;
 	std::vector< std::shared_ptr<Particle> > particles;
 	std::vector< std::shared_ptr<Spring> > springs;

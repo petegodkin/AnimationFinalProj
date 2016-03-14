@@ -71,10 +71,28 @@ void Scene::reset()
 	gelatin->reset();
 }
 
-void Scene::sendAction(bool jump) {
-    if (jump) {
-        gelatin->jump();
+void Scene::sendAction(bool w, bool s, bool a, bool d, bool q, bool e) {
+    const double speed = 4.0;
+    Vector3d vel(0, 0, 0);
+    if (w) {
+        vel(2) -= speed;
     }
+    if (s) {
+        vel(2) += speed;
+    }
+    if (a) {
+        vel(0) -= speed;
+    }
+    if (d) {
+        vel(0) += speed;
+    }
+    if (q) {
+        vel(1) -= speed;
+    }
+    if (e) {
+        vel(1) += speed;
+    }
+    gelatin->move(vel);
 }
 
 void Scene::step()

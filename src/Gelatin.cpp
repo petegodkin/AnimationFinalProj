@@ -126,7 +126,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 
         // Create shear springs
         for(int i = 0; i < rows-1; ++i) {
-            for(int j = 0; j < cols-1; ++j) {
+            for(int j = 0; j < cols; ++j) {
                 int k00 = i*cols + j + k*cols*rows;
                 int k10 = k00 + cols * rows;
                 int k01 = k00 + 1;
@@ -138,7 +138,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 
         // Create shear springs
         for(int i = 0; i < rows-1; ++i) {
-            for(int j = 0; j < cols*1; ++j) {
+            for(int j = 0; j < cols; ++j) {
                 int k00 = i*cols + j + k*cols*rows;
                 int k10 = k00 + cols * rows;
                 int k01 = k00 + cols;
@@ -395,11 +395,22 @@ void Gelatin::addKs(Matrix3d ks, int i0, int i1, double h){
     }
 }
 
+void Gelatin::move(Vector3d vel) {
+    for (int i = 0; i < particles.size(); i++) {
+        if (!particles[i]->fixed) {
+            particles[i]->v += vel;
+
+            int index = particles[i]->i;
+            v.block<3,1>(index, 0) = particles[i]->v;
+        }
+    }
+}
+
 void Gelatin::jump() {
     for (int i = 0; i < particles.size(); i++) {
         if (!particles[i]->fixed) {
             particles[i]->v(0) += 0.02;
-            particles[i]->v(1) += 2;
+            particles[i]->v(1) += 5;
 
             int index = particles[i]->i;
             v.block<3,1>(index, 0) = particles[i]->v;
@@ -498,6 +509,7 @@ void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Part
 }
 
 void Gelatin::collide(const vector< shared_ptr<Particle> > spheres) {
+
     // with the spheres
 	for (int i = 0; i < particles.size(); i++) {
 	    for (int j = 0; j < spheres.size(); j++) {
@@ -516,6 +528,8 @@ void Gelatin::collide(const vector< shared_ptr<Particle> > spheres) {
 	    double rad = particles[i]->r;
 	    if (pos(1) - rad < 0 && particles[i]->v(1) < 0) {
             particles[i]->v(1) = 0;
+            //friction
+            particles[i]->v *= friction;
             particles[i]->x(1) = 0;
 	    }
     }

@@ -226,12 +226,17 @@ void render()
 	GLSL::checkError(GET_FILE_LINE);
 }
 
+bool getKey(char c) {
+    bool res = keyToggles[(unsigned)c];
+    keyToggles[(unsigned)c] = false;
+    return res;
+}
+
 void stepperFunc()
 {
 	while(true) {
 		if(keyToggles[(unsigned)' ']) {
-		    scene->sendAction(keyToggles[(unsigned)'j']);
-		    keyToggles[(unsigned)'j'] = false;
+		    scene->sendAction(getKey('w'), getKey('s'), getKey('a'), getKey('d'), getKey('q'), getKey('e'));
 			scene->step();
 		}
 		this_thread::sleep_for(chrono::microseconds(1));

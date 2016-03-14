@@ -34,7 +34,7 @@ public:
 	
 	double getTime() const { return t; }
 
-	void sendAction(bool jump);
+	void sendAction(bool w, bool s, bool a, bool d, bool q, bool e);
 	
 private:
 	double t;
