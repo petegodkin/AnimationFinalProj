@@ -204,14 +204,20 @@ int Gelatin::setNormals(int curNorIndex, int index, int adj[4]) {
 
     for (int k = 0; k < 3; k++) {
         if (adj[k] != -1 && adj[k+1] != -1) {
-            Vector3d res = particles[adj[k]]->x.cross(particles[adj[k+1]]->x);
-            nor += res.normalized();
+            Vector3d first = (particles[adj[k]]->x - x).normalized();
+            Vector3d second = (particles[adj[k+1]]->x - x).normalized();
+
+            Vector3d res = first.cross(second).normalized();
+            nor += res;
         }
     }
 
     if (adj[3] != -1 && adj[0] != -1) {
-        Vector3d res = particles[adj[3]]->x.cross(particles[adj[0]]->x);
-        nor += res.normalized();
+        Vector3d first = (particles[adj[3]]->x - x).normalized();
+        Vector3d second = (particles[adj[0]]->x - x).normalized();
+
+        Vector3d res = first.cross(second).normalized();
+        nor += res;
     }
 
     nor = nor.normalized();
@@ -379,6 +385,14 @@ void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Part
 	K.setZero();
 	v.setZero();
 	f.setZero();
+
+//
+//	typedef Eigen::Triplet<double> T;
+//    std::vector<T> aTrips;
+//    aTrips.push_back(T(0, 0, 1));
+//    aTrips.push_back(T(1, 1, 1));
+//    Eigen::SparseMatrix<double> Asd(2,2);
+//    Asd.setFromTriplets(aTrips.begin(), aTrips.end());
 
 	for (int i = 0; i < particles.size(); i++) {
 	    if (!particles[i]->fixed) {
