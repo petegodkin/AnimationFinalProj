@@ -31,7 +31,7 @@ void Scene::load(const string &RESOURCE_DIR)
 	int cols = 6;
 	int layers = 6;
 	double mass = 0.1;
-	double stiffness = 2e1;
+	double stiffness = 1e1;
 	Vector2d damping(1.0, 1.0);
 	Vector3d x00(-0.25, 0.5, 0.0);
 	Vector3d x01(0.25, 0.5, 0.0);
@@ -43,7 +43,7 @@ void Scene::load(const string &RESOURCE_DIR)
 	sphereShape->loadMesh(RESOURCE_DIR + "sphere2.obj");
 	
 	auto sphere = make_shared<Particle>(sphereShape);
-	spheres.push_back(sphere);
+	//spheres.push_back(sphere);
 	sphere->r = 0.1;
 	sphere->x = Vector3d(0.0, 0.2, 0.0);
 }
@@ -69,6 +69,12 @@ void Scene::reset()
 		spheres[i]->reset();
 	}
 	gelatin->reset();
+}
+
+void Scene::sendAction(bool jump) {
+    if (jump) {
+        gelatin->jump();
+    }
 }
 
 void Scene::step()

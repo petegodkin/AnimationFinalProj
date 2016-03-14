@@ -19,5 +19,5 @@ void main()
     vec3 colorD = max(dot(l, n), 0.0) * someColor;
     vec3 colorS = pow(max(dot(h, n), 0.0), 200) * someColor;
     vec3 color = colorD + colorS;
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, 0.85);
 }

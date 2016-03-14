@@ -14,6 +14,8 @@ class Spring;
 class MatrixStack;
 class Program;
 
+typedef Eigen::Triplet<double> Trip;
+
 class Gelatin
 {
 public:
@@ -38,6 +40,8 @@ public:
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm) const;
 	void drawNormals(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm, std::shared_ptr<MatrixStack> P) const;
 
+	void jump();
+
 private:
 	int rows;
 	int cols;
@@ -52,6 +56,8 @@ private:
 	Eigen::MatrixXd M;
 	Eigen::MatrixXd K;
 
+    std::vector<Trip> aTrips;
+
 	std::vector<unsigned int> eleBuf;
 	std::vector<float> posBuf;
 	std::vector<float> norBuf;
@@ -62,6 +68,8 @@ private:
 	unsigned texBufID;
 
 	int setNormals(int curNorIndex, int index, int adj[4]);
+	void addKs(Eigen::Matrix3d ks, int i0, int i1, double h);
+	void collide(const std::vector< std::shared_ptr<Particle> > spheres);
 
 	void setAdj(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int));
 	void setAdjRev(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int));

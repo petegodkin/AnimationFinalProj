@@ -33,6 +33,8 @@ public:
 	void drawNormals(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack> P) const;
 	
 	double getTime() const { return t; }
+
+	void sendAction(bool jump);
 	
 private:
 	double t;

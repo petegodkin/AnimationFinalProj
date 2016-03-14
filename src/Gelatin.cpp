@@ -1,4 +1,5 @@
 #include <iostream>
+#include <Eigen/Sparse>
 
 #include "Gelatin.h"
 #include "Particle.h"
@@ -7,8 +8,11 @@
 #include "Program.h"
 #include "GLSL.h"
 
+
 using namespace std;
 using namespace Eigen;
+
+
 
 shared_ptr<Spring> createSpring(const shared_ptr<Particle> p0, const shared_ptr<Particle> p1, double E)
 {
@@ -57,7 +61,6 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 			    Vector3d x = (1 - v)*x0 + v*x1;
 			    double w = k / (layers - 1.0) * 0.5;
 			    x(1) += w;
-			    //std::cout << "X[" << i * rows * cols + j * cols + k << "] = " << x(0) << ", " << x(1) << ", " << x(2) << std::endl;
 
                 auto p = make_shared<Particle>();
                 particles.push_back(p);
@@ -66,7 +69,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
                 p->v << 0.0, 0.0, 0.0;
                 p->m = mass/(nVerts);
                 // Pin two particles
-                if(i == 0 && (j == 0) && k == 0) {
+                if(i == 0 && (false/*j == 0 || j == cols - 1*/) && k == 0) {
                     p->fixed = true;
                     p->i = -1;
                 } else {
@@ -112,6 +115,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 	}
 
 	for (int k = 0; k < layers-1; ++k) {
+	    // z springs
 	    for(int i = 0; i < rows; ++i) {
 	        for(int j = 0; j < cols; ++j) {
 	            int k0 = i*cols + j + k*cols*rows;
@@ -134,7 +138,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 
         // Create shear springs
         for(int i = 0; i < rows-1; ++i) {
-            for(int j = 0; j < cols-1; ++j) {
+            for(int j = 0; j < cols*1; ++j) {
                 int k00 = i*cols + j + k*cols*rows;
                 int k10 = k00 + cols * rows;
                 int k01 = k00 + cols;
@@ -379,27 +383,57 @@ void Gelatin::updatePosNor()
       }
 }
 
+void Gelatin::addKs(Matrix3d ks, int i0, int i1, double h){
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            double kVal = h * h * damping(1) * ks(i, j);
+            aTrips.push_back(Trip(i0+i, i0+j, kVal));
+            aTrips.push_back(Trip(i0+i, i1+j, -1 * kVal));
+            aTrips.push_back(Trip(i1+i, i0+j, -1 * kVal));
+            aTrips.push_back(Trip(i1+i, i1+j, kVal));
+        }
+    }
+}
+
+void Gelatin::jump() {
+    for (int i = 0; i < particles.size(); i++) {
+        if (!particles[i]->fixed) {
+            particles[i]->v(0) += 0.02;
+            particles[i]->v(1) += 2;
+
+            int index = particles[i]->i;
+            v.block<3,1>(index, 0) = particles[i]->v;
+        }
+    }
+}
+
 void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Particle> > spheres)
 {
-	M.setZero();
-	K.setZero();
-	v.setZero();
-	f.setZero();
-
+	aTrips.clear();
+	//v.setZero();
+	//f.setZero();
 //
-//	typedef Eigen::Triplet<double> T;
-//    std::vector<T> aTrips;
-//    aTrips.push_back(T(0, 0, 1));
-//    aTrips.push_back(T(1, 1, 1));
-//    Eigen::SparseMatrix<double> Asd(2,2);
-//    Asd.setFromTriplets(aTrips.begin(), aTrips.end());
+//	vTrips.clear();
+//    fTrips.clear();
+
+    VectorXd b(n);
+    b.setZero();
 
 	for (int i = 0; i < particles.size(); i++) {
 	    if (!particles[i]->fixed) {
 	        int index = particles[i]->i;
-            M.block<3,3>(index, index) = particles[i]->m * Matrix3d::Identity();
-            v.block<3,1>(index, 0) = particles[i]->v;
-            f.block<3,1>(index, 0) = particles[i]->m * grav;
+	        double m = particles[i]->m;
+
+	        double val = m + h * damping(0) * m;
+            aTrips.push_back(Trip(index, index, val));
+            aTrips.push_back(Trip(index+1, index+1, val));
+            aTrips.push_back(Trip(index+2, index+2, val));
+
+            Vector3d v = particles[i]->v;
+            Vector3d fg = h * m * grav;
+            b(index) = m * v(0) + fg(0);
+            b(index+1) = m * v(1) + fg(1);
+            b(index+2) = m * v(2) + fg(2);
         }
 	}
 
@@ -416,29 +450,38 @@ void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Part
 	    Vector3d fs = E * (l - L) * (delta / l);
 
 	    if (!springs[i]->p0->fixed) {
-	        f.block<3,1>(p0->i, 0) += fs;
+	        b(p0->i) += h * fs(0);
+	        b(p0->i+1) += h * fs(1);
+	        b(p0->i+2) += h * fs(2);
 	    }
 	    if (!springs[i]->p1->fixed) {
-	        f.block<3,1>(p1->i, 0) -= fs;
+	        b(p1->i) -= h * fs(0);
+            b(p1->i+1) -= h * fs(1);
+            b(p1->i+2) -= h * fs(2);
 	    }
 
         if (!springs[i]->p0->fixed && !springs[i]->p1->fixed) {
-            Matrix3d ks =  (E / (l * l)) * ((1.0 - (l - L)/l) * (delta * delta.transpose()) + ((l - L)/l) * double(delta.transpose() * delta) * Matrix3d::Identity());
+            Matrix3d ks =  (E / (l * l)) * ((1.0 - (l - L)/l) * (delta * delta.transpose())
+                + ((l - L)/l) * double(delta.transpose() * delta) * Matrix3d::Identity());
             int i0 = p0->i;
             int i1 = p1->i;
-            K.block<3, 3>(i0, i0) += ks;
-            K.block<3, 3>(i0, i1) -= ks;
-            K.block<3, 3>(i1, i0) -= ks;
-            K.block<3, 3>(i1, i1) += ks;
+
+            addKs(ks, i0, i1, h);
         }
 	}
 
-	MatrixXd b = M * v + h * f;
+    Eigen::SparseMatrix<double> sparseA(n,n);
+    sparseA.setFromTriplets(aTrips.begin(), aTrips.end());
 
-    MatrixXd D = h * damping(0) * M + h * h * damping(1) * K;
-	MatrixXd A = M + D;
+    ConjugateGradient< SparseMatrix<double> > cg;
+    cg.setMaxIterations(25);
+    cg.setTolerance(1e-3);
+    cg.compute(sparseA);
 
-	v = A.ldlt().solve(b);
+    //v = cg.solve(b);
+    v = cg.solveWithGuess(b, v);
+
+	//v = A.ldlt().solve(b);
 
 	for (int i = 0; i < particles.size(); i++) {
 	    if (!particles[i]->fixed) {
@@ -448,6 +491,14 @@ void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Part
         }
 	}
 
+	collide(spheres);
+
+	// Update position and normal buffers
+	updatePosNor();
+}
+
+void Gelatin::collide(const vector< shared_ptr<Particle> > spheres) {
+    // with the spheres
 	for (int i = 0; i < particles.size(); i++) {
 	    for (int j = 0; j < spheres.size(); j++) {
 	        Vector3d delta = particles[i]->x - spheres[j]->x;
@@ -459,9 +510,17 @@ void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Part
 	    }
 	}
 
-	// Update position and normal buffers
-	updatePosNor();
+	//with the ground
+	for (int i = 0; i < particles.size(); i++) {
+	    Vector3d pos = particles[i]->x;
+	    double rad = particles[i]->r;
+	    if (pos(1) - rad < 0 && particles[i]->v(1) < 0) {
+            particles[i]->v(1) = 0;
+            particles[i]->x(1) = 0;
+	    }
+    }
 }
+
 
 void Gelatin::init()
 {

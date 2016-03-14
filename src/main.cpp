@@ -125,6 +125,8 @@ static void init()
 	// You can intersperse this line in your code to find the exact location
 	// of your OpenGL error.
 	GLSL::checkError(GET_FILE_LINE);
+
+	//sparseTest();
 }
 
 void render()
@@ -228,6 +230,8 @@ void stepperFunc()
 {
 	while(true) {
 		if(keyToggles[(unsigned)' ']) {
+		    scene->sendAction(keyToggles[(unsigned)'j']);
+		    keyToggles[(unsigned)'j'] = false;
 			scene->step();
 		}
 		this_thread::sleep_for(chrono::microseconds(1));
