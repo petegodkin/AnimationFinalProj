@@ -251,7 +251,10 @@ void stepperFunc()
 {
 	while(true) {
 		if(keyToggles[(unsigned)' ']) {
-		    scene->sendAction(getKey('w'), getKey('s'), getKey('a'), getKey('d'), getKey('q'), getKey('e'));
+		    if (keyToggles[(unsigned)'k']) {
+		        keyToggles[(unsigned)'t'] = false;
+		    }
+		    scene->sendAction(getKey('w'), getKey('s'), getKey('a'), getKey('d'), getKey('k'));
 			scene->step();
 		}
 		this_thread::sleep_for(chrono::microseconds(1));

@@ -70,7 +70,7 @@ void FreakFace::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog)
 	    MV->translate(Eigen::Vector3f(x(0), x(1), x(2)));
         MV->scale(r);
         glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE, MV->topMatrix().data());
-        //collisionSphere->draw(prog);
+        collisionSphere->draw(prog);
         MV->popMatrix();
 	}
 }

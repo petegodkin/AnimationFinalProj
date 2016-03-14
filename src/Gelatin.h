@@ -29,7 +29,8 @@ public:
 		  const Eigen::Vector3d &x11,
 		  double mass,
 		  double stiffness,
-		  const Eigen::Vector2d &damping);
+		  const Eigen::Vector2d &damping,
+		  const Eigen::Vector3d start);
 	virtual ~Gelatin();
 
 	void tare();
@@ -41,7 +42,7 @@ public:
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm) const;
 	void drawNormals(std::shared_ptr<MatrixStack> MV, std::shared_ptr<MatrixStack> P) const;
 
-	void jump();
+	void shoot(Eigen::Vector3d vel);
 	void move(Eigen::Vector3d vel);
 
 	Eigen::Vector3d getCenter();

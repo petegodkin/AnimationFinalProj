@@ -15,7 +15,8 @@ using namespace Eigen;
 Scene::Scene() :
 	t(0.0),
 	h(1e-2),
-	grav(0.0, 0.0, 0.0)
+	grav(0.0, 0.0, 0.0),
+	power(25.0)
 {
 }
 
@@ -40,7 +41,7 @@ void Scene::load(const string &RESOURCE_DIR)
 	Vector3d x01(0.25, 0.5, 0.0);
 	Vector3d x10(-0.25, 0.5, -0.5);
 	Vector3d x11(0.25, 0.5, -0.5);
-	gelatin = make_shared<Gelatin>(rows, cols, layers, x00, x01, x10, x11, mass, stiffness, damping);
+	gelatin = make_shared<Gelatin>(rows, cols, layers, x00, x01, x10, x11, mass, stiffness, damping, Vector3d(0, 2, 8));
 	
 	faceShape = make_shared<Shape>();
 	faceShape->loadMesh(RESOURCE_DIR + "freak_face.obj");
@@ -79,28 +80,30 @@ void Scene::reset()
 	gelatin->reset();
 }
 
-void Scene::sendAction(bool w, bool s, bool a, bool d, bool q, bool e) {
-    const double speed = 4.0;
+Vector3d Scene::calcVel(Vector3d pos) {
+    return pos + Vector3d(cannonDir(0), cannonDir(1), 0 - pos(2)).normalized() * power;
+}
+
+void Scene::sendAction(bool w, bool s, bool a, bool d, bool k) {
+    const double speed = 0.3;
     Vector3d vel(0, 0, 0);
     if (w) {
-        vel(2) -= speed;
+        cannonDir(1) += speed;
     }
     if (s) {
-        vel(2) += speed;
+        cannonDir(1) -= speed;
     }
     if (a) {
-        vel(0) -= speed;
+        cannonDir(0) -= speed;
     }
     if (d) {
-        vel(0) += speed;
+        cannonDir(0) += speed;
     }
-    if (q) {
-        vel(1) -= speed;
+    //gelatin->move(vel);
+
+    if (k) {
+        gelatin->shoot(calcVel(gelatin->getCenter()));
     }
-    if (e) {
-        vel(1) += speed;
-    }
-    gelatin->move(vel);
 }
 
 void Scene::step()
@@ -113,6 +116,7 @@ void Scene::step()
 		Vector3d x0 = s->x;
 		double radius = 0.5;
 		double a = 2.0*t;
+		s->x(0) = radius * cos(a);
 		s->x(2) = radius * sin(a);
 		Vector3d dx = s->x - x0;
 		s->v = dx/h;
@@ -140,7 +144,7 @@ void Scene::drawNormals(shared_ptr<MatrixStack> MV, shared_ptr<MatrixStack> P) c
 	gelatin->drawNormals(MV, P);
 }
 
-void Scene::drawTrajectory(shared_ptr<MatrixStack> MV, shared_ptr<MatrixStack> P) const
+void Scene::drawTrajectory(shared_ptr<MatrixStack> MV, shared_ptr<MatrixStack> P)
 {
     GLSL::checkError(GET_FILE_LINE);
 	glMatrixMode(GL_PROJECTION);
@@ -155,13 +159,12 @@ void Scene::drawTrajectory(shared_ptr<MatrixStack> MV, shared_ptr<MatrixStack> P
 
 	Vector3d cur = gelatin->getCenter();
 	double mass = gelatin->getMass();
-	Vector3d vel = cur + Vector3d(-1, cannonDir(0), cannonDir(1)).normalized();
-    const int numSteps = 30;
-    const double step = 0.1;
+	Vector3d vel = calcVel(cur);
+    const int numSteps = 500;
     for (int i = 0; i < numSteps; i++) {
         glVertex3f(cur(0), cur(1), cur(2));
-        cur += vel * step;
-        vel += step * mass * grav;
+        cur += vel * h;
+        vel += h * mass * grav;
     }
 
     glEnd();

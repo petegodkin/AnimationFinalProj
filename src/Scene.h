@@ -33,17 +33,20 @@ public:
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prog) const;
 	void drawFaces(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prog) const;
 	void drawNormals(std::shared_ptr<MatrixStack> MV, std::shared_ptr<MatrixStack> P) const;
-	void drawTrajectory(std::shared_ptr<MatrixStack> MV, std::shared_ptr<MatrixStack> P) const;
+	void drawTrajectory(std::shared_ptr<MatrixStack> MV, std::shared_ptr<MatrixStack> P);
 	
 	double getTime() const { return t; }
 
-	void sendAction(bool w, bool s, bool a, bool d, bool q, bool e);
+	void sendAction(bool w, bool s, bool a, bool d, bool k);
 	
 private:
 	double t;
 	double h;
 	Eigen::Vector3d grav;
 	Eigen::Vector2d cannonDir;
+	double power;
+
+	Eigen::Vector3d calcVel(Eigen::Vector3d pos);
 	
 	std::shared_ptr<Shape> faceShape;
 	std::shared_ptr<Shape> sphereShape;

@@ -33,7 +33,8 @@ Gelatin::Gelatin(int rows, int cols, int layers,
 			 const Vector3d &x11,
 			 double mass,
 			 double stiffness,
-			 const Vector2d &damping)
+			 const Vector2d &damping,
+			 const Vector3d start)
 {
 	assert(rows > 1);
 	assert(cols > 1);
@@ -67,7 +68,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
                 auto p = make_shared<Particle>();
                 particles.push_back(p);
                 p->r = r;
-                p->x = x;
+                p->x = x + start;
                 p->v << 0.0, 0.0, 0.0;
                 p->m = mass/(nVerts);
                 // Pin two particles
@@ -417,11 +418,10 @@ void Gelatin::move(Vector3d vel) {
     }
 }
 
-void Gelatin::jump() {
+void Gelatin::shoot(Vector3d vel) {
     for (int i = 0; i < particles.size(); i++) {
         if (!particles[i]->fixed) {
-            particles[i]->v(0) += 0.02;
-            particles[i]->v(1) += 5;
+            particles[i]->v = vel;
 
             int index = particles[i]->i;
             v.block<3,1>(index, 0) = particles[i]->v;
