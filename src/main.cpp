@@ -202,11 +202,14 @@ void render()
 	glEnd();
 	progSimple->unbind();
 
+    if(keyToggles[(unsigned)'n']) {
+        scene->drawNormals(MV, prog, P);
+    }
 	// Draw scene
 	prog->bind();
 	glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, P->topMatrix().data());
 	MV->pushMatrix();
-	scene->draw(MV, prog, P);
+	scene->draw(MV, prog);
 	MV->popMatrix();
 	prog->unbind();
 	

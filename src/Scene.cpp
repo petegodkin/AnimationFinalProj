@@ -99,11 +99,7 @@ void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) con
 	gelatin->draw(MV, prog);
 }
 
-void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog, shared_ptr<MatrixStack> P) const
+void Scene::drawNormals(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog, shared_ptr<MatrixStack> P) const
 {
-	//glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(1.0, 1.0, 1.0).data());
-	for(int i = 0; i < (int)spheres.size(); ++i) {
-		spheres[i]->draw(MV, prog);
-	}
-	gelatin->draw(MV, prog, P);
+	gelatin->drawNormals(MV, prog, P);
 }

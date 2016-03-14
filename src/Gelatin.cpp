@@ -66,7 +66,7 @@ Gelatin::Gelatin(int rows, int cols, int layers,
                 p->v << 0.0, 0.0, 0.0;
                 p->m = mass/(nVerts);
                 // Pin two particles
-                if(i == 0 && (j == 0 || j == cols-1) && k == 0) {
+                if(i == 0 && (j == 0) && k == 0) {
                     p->fixed = true;
                     p->i = -1;
                 } else {
@@ -223,6 +223,63 @@ int Gelatin::setNormals(int curNorIndex, int index, int adj[4]) {
     return curNorIndex;
 }
 
+int frontIndex(int cols, int rows, int layers, int i, int j) {
+    return i*layers + j;
+}
+
+int backIndex(int cols, int rows, int layers, int i, int j) {
+    int initial = cols * layers * (rows - 1);
+    return initial + i*layers + j;
+}
+
+int bottomIndex(int cols, int rows, int layers, int i, int j) {
+    return i*cols + j * cols * layers;
+}
+
+int topIndex(int cols, int rows, int layers, int i, int j) {
+    int initial = cols - 1;
+    return initial + i*cols + j * cols * layers;
+}
+
+int leftIndex(int cols, int rows, int layers, int i, int j) {
+    return i + j * rows * layers;
+}
+
+int rightIndex(int cols, int rows, int layers, int i, int j) {
+    int initial = rows * (layers - 1);
+    return initial + i + j * cols * layers;
+}
+
+void Gelatin::setAdj(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int)) {
+    if (i > 0) {
+        adj[0] = calcIndex(cols, rows, layers, i-1, j);
+    }
+    if (j > 0) {
+        adj[1] = calcIndex(cols, rows, layers, i, j-1);
+    }
+    if (i < imax) {
+        adj[2] = calcIndex(cols, rows, layers, i+1, j);
+    }
+    if (j < jmax) {
+        adj[3] = calcIndex(cols, rows, layers, i, j+1);
+    }
+}
+
+void Gelatin::setAdjRev(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int)) {
+    if (i > 0) {
+        adj[3] = calcIndex(cols, rows, layers, i-1, j);
+    }
+    if (j > 0) {
+        adj[2] = calcIndex(cols, rows, layers, i, j-1);
+    }
+    if (i < imax) {
+        adj[1] = calcIndex(cols, rows, layers, i+1, j);
+    }
+    if (j < jmax) {
+        adj[0] = calcIndex(cols, rows, layers, i, j+1);
+    }
+}
+
 void Gelatin::updatePosNor()
 {
     int curIndex = 0;
@@ -230,25 +287,14 @@ void Gelatin::updatePosNor()
 	// Position row == 0, front
     for(int i = 0; i < cols; ++i) {
         for (int j = 0; j < layers; ++j) {
-            int index = i*layers + j;
+            int index = frontIndex(cols, rows, layers, i, j);
             Vector3d x = particles[index]->x;
             posBuf[curIndex++] = x(0);
             posBuf[curIndex++] = x(1);
             posBuf[curIndex++] = x(2);
 
             int adj[4] = {-1, -1, -1, -1};
-            if (i > 0) {
-                adj[0] = (i - 1)*layers + j;
-            }
-            if (j > 0) {
-                adj[1] = i*layers + j - 1;
-            }
-            if (i < cols - 1) {
-                adj[2] = (i + 1)*layers + j;
-            }
-            if (j < layers - 1) {
-                adj[3] = i*layers + j + 1;
-            }
+            setAdj(adj, i, j, cols-1, layers-1, frontIndex);
             curNorIndex = setNormals(curNorIndex, index, adj);
         }
     }
@@ -256,26 +302,14 @@ void Gelatin::updatePosNor()
     //row == rows - 1, back
     for(int i = 0; i < cols; ++i) {
         for (int j = 0; j < layers; ++j) {
-            int initial = cols * layers * (rows - 1);
-            int index = initial + i*layers + j;
+            int index = backIndex(cols, rows, layers, i, j);
             Vector3d x = particles[index]->x;
             posBuf[curIndex++] = x(0);
             posBuf[curIndex++] = x(1);
             posBuf[curIndex++] = x(2);
 
             int adj[4] = {-1, -1, -1, -1};
-            if (i > 0) {
-                adj[0] = initial + (i-1)*layers + j;
-            }
-            if (j > 0) {
-                adj[1] = initial + i*layers + j - 1;
-            }
-            if (i < cols - 1) {
-                adj[2] = initial + (i+1)*layers + j;
-            }
-            if (j < layers - 1) {
-                adj[3] = initial + i*layers + j + 1;
-            }
+            setAdjRev(adj, i, j, cols-1, layers-1, backIndex);
             curNorIndex = setNormals(curNorIndex, index, adj);
         }
     }
@@ -283,61 +317,60 @@ void Gelatin::updatePosNor()
     //layer == 0, bottom
     for(int i = 0; i < cols; ++i) {
         for (int j = 0; j < rows; ++j) {
-            int index =  i*cols + j * cols * layers;
+            int index = bottomIndex(cols, rows, layers, i, j);
             Vector3d x = particles[index]->x;
             posBuf[curIndex++] = x(0);
             posBuf[curIndex++] = x(1);
             posBuf[curIndex++] = x(2);
-            norBuf[curNorIndex++] = x(0);
-            norBuf[curNorIndex++] = x(1);
-            norBuf[curNorIndex++] = x(2);
+
+            int adj[4] = {-1, -1, -1, -1};
+            setAdjRev(adj, i, j, cols-1, rows-1, bottomIndex);
+            curNorIndex = setNormals(curNorIndex, index, adj);
         }
     }
 
     //layer == layers - 1, top
     for(int i = 0; i < cols; ++i) {
         for (int j = 0; j < rows; ++j) {
-            int initial = cols - 1;
-            int index =  initial + i*cols + j * cols * layers;
+            int index =  topIndex(cols, rows, layers, i, j);
             Vector3d x = particles[index]->x;
             posBuf[curIndex++] = x(0);
             posBuf[curIndex++] = x(1);
             posBuf[curIndex++] = x(2);
-            norBuf[curNorIndex++] = x(0);
-            norBuf[curNorIndex++] = x(1);
-            norBuf[curNorIndex++] = x(2);
+
+            int adj[4] = {-1, -1, -1, -1};
+            setAdj(adj, i, j, cols-1, rows-1, topIndex);
+            curNorIndex = setNormals(curNorIndex, index, adj);
         }
     }
 
     //col == 0, left
      for(int i = 0; i < layers; ++i) {
          for (int j = 0; j < rows; ++j) {
-            int index =  i + j * rows * layers;
+            int index =  leftIndex(cols, rows, layers, i, j);
             Vector3d x = particles[index]->x;
             posBuf[curIndex++] = x(0);
             posBuf[curIndex++] = x(1);
             posBuf[curIndex++] = x(2);
-            norBuf[curNorIndex++] = x(0);
-            norBuf[curNorIndex++] = x(1);
-            norBuf[curNorIndex++] = x(2);
+            int adj[4] = {-1, -1, -1, -1};
+            setAdj(adj, i, j, cols-1, rows-1, leftIndex);
+            curNorIndex = setNormals(curNorIndex, index, adj);
          }
      }
 
      //col == cols - 1, right?
       for(int i = 0; i < cols; ++i) {
           for (int j = 0; j < rows; ++j) {
-            int initial = rows * (layers - 1);
-            int index =  initial + i + j * cols * layers;
+            int index =  rightIndex(cols, rows, layers, i, j);
             Vector3d x = particles[index]->x;
             posBuf[curIndex++] = x(0);
             posBuf[curIndex++] = x(1);
             posBuf[curIndex++] = x(2);
-            norBuf[curNorIndex++] = x(0);
-            norBuf[curNorIndex++] = x(1);
-            norBuf[curNorIndex++] = x(2);
+            int adj[4] = {-1, -1, -1, -1};
+            setAdjRev(adj, i, j, cols-1, rows-1, rightIndex);
+            curNorIndex = setNormals(curNorIndex, index, adj);
           }
       }
-
 }
 
 void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Particle> > spheres)
@@ -441,7 +474,7 @@ void Gelatin::init()
 }
 
 
-void Gelatin::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prgm, shared_ptr<MatrixStack> P) const
+void Gelatin::drawNormals(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prgm, shared_ptr<MatrixStack> P) const
 {
 
     GLSL::checkError(GET_FILE_LINE);
@@ -456,10 +489,8 @@ void Gelatin::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prgm, s
     glBegin(GL_LINES);
     for (int i = 0; i < posBuf.size(); i+=3) {
         Vector3f pos(posBuf[i], posBuf[i+1], posBuf[i+2]);
-        //pos = pos;
         Vector3f nor(norBuf[i], norBuf[i+1], norBuf[i+2]);
-        //nor = nor;
-        Vector3f norTip = pos + nor;
+        Vector3f norTip = pos + nor * .05;
         glVertex3f(pos(0), pos(1), pos(2));
         glVertex3f(norTip(0), norTip(1), norTip(2));
     }
@@ -471,9 +502,6 @@ void Gelatin::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prgm, s
     // Pop projection matrix
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
-
-
-    draw(MV, prgm);
 }
 
 

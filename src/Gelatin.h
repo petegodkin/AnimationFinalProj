@@ -36,7 +36,7 @@ public:
 
 	void init();
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm) const;
-	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm, std::shared_ptr<MatrixStack> P) const;
+	void drawNormals(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm, std::shared_ptr<MatrixStack> P) const;
 
 private:
 	int rows;
@@ -62,6 +62,9 @@ private:
 	unsigned texBufID;
 
 	int setNormals(int curNorIndex, int index, int adj[4]);
+
+	void setAdj(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int));
+	void setAdjRev(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int));
 };
 
 #endif
