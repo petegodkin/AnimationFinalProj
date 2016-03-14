@@ -7,6 +7,7 @@
 #include "MatrixStack.h"
 #include "Program.h"
 #include "GLSL.h"
+#include "FreakFace.h"
 
 
 using namespace std;
@@ -418,7 +419,7 @@ void Gelatin::jump() {
     }
 }
 
-void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Particle> > spheres)
+void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<FreakFace> > faces)
 {
 	aTrips.clear();
 	//v.setZero();
@@ -502,22 +503,22 @@ void Gelatin::step(double h, const Vector3d &grav, const vector< shared_ptr<Part
         }
 	}
 
-	collide(spheres);
+	collide(faces);
 
 	// Update position and normal buffers
 	updatePosNor();
 }
 
-void Gelatin::collide(const vector< shared_ptr<Particle> > spheres) {
+void Gelatin::collide(const vector< shared_ptr<FreakFace> > faces) {
 
     // with the spheres
 	for (int i = 0; i < particles.size(); i++) {
-	    for (int j = 0; j < spheres.size(); j++) {
-	        Vector3d delta = particles[i]->x - spheres[j]->x;
+	    for (int j = 0; j < faces.size(); j++) {
+	        Vector3d delta = particles[i]->x - faces[j]->x;
 	        double dist = delta.norm();
-	        if (dist < spheres[j]->r + particles[i]->r) {
+	        if (dist < faces[j]->r + particles[i]->r) {
 	            particles[i]->v = (particles[i]->v - (particles[i]->v.dot(delta.normalized())) * delta.normalized());
-	            particles[i]->x = (spheres[j]->x + (spheres[j]->r + particles[i]->r) * delta.normalized());
+	            particles[i]->x = (faces[j]->x + (faces[j]->r + particles[i]->r) * delta.normalized());
 	        }
 	    }
 	}

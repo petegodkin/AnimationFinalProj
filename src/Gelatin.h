@@ -13,6 +13,7 @@ class Particle;
 class Spring;
 class MatrixStack;
 class Program;
+class FreakFace;
 
 typedef Eigen::Triplet<double> Trip;
 
@@ -34,7 +35,7 @@ public:
 	void tare();
 	void reset();
 	void updatePosNor();
-	void step(double h, const Eigen::Vector3d &grav, const std::vector< std::shared_ptr<Particle> > spheres);
+	void step(double h, const Eigen::Vector3d &grav, const std::vector< std::shared_ptr<FreakFace> > faces);
 
 	void init();
 	void draw(std::shared_ptr<MatrixStack> MV, const std::shared_ptr<Program> prgm) const;
@@ -72,7 +73,7 @@ private:
 
 	int setNormals(int curNorIndex, int index, int adj[4]);
 	void addKs(Eigen::Matrix3d ks, int i0, int i1, double h);
-	void collide(const std::vector< std::shared_ptr<Particle> > spheres);
+	void collide(const std::vector< std::shared_ptr<FreakFace> > faces);
 
 	void setAdj(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int));
 	void setAdjRev(int* adj, int i, int j, int imax, int jmax, int (*calcIndex)(int, int, int, int, int));

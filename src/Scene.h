@@ -14,6 +14,7 @@ class Particle;
 class MatrixStack;
 class Program;
 class Shape;
+class FreakFace;
 
 class Scene
 {
@@ -41,9 +42,9 @@ private:
 	double h;
 	Eigen::Vector3d grav;
 	
-	std::shared_ptr<Shape> sphereShape;
+	std::shared_ptr<Shape> faceShape;
 	std::shared_ptr<Gelatin> gelatin;
-	std::vector< std::shared_ptr<Particle> > spheres;
+	std::vector< std::shared_ptr<FreakFace> > faces;
 };
 
 #endif

@@ -5,6 +5,7 @@
 #include "Gelatin.h"
 #include "Shape.h"
 #include "Program.h"
+#include "FreakFace.h"
 
 using namespace std;
 using namespace Eigen;
@@ -39,25 +40,25 @@ void Scene::load(const string &RESOURCE_DIR)
 	Vector3d x11(0.25, 0.5, -0.5);
 	gelatin = make_shared<Gelatin>(rows, cols, layers, x00, x01, x10, x11, mass, stiffness, damping);
 	
-	sphereShape = make_shared<Shape>();
-	sphereShape->loadMesh(RESOURCE_DIR + "sphere2.obj");
+	faceShape = make_shared<Shape>();
+	faceShape->loadMesh(RESOURCE_DIR + "freak_face.obj");
 	
-	auto sphere = make_shared<Particle>(sphereShape);
-	//spheres.push_back(sphere);
-	sphere->r = 0.1;
-	sphere->x = Vector3d(0.0, 0.2, 0.0);
+	auto freak = make_shared<FreakFace>(faceShape);
+	//faces.push_back(freak);
+	freak->r = 0.1;
+	freak->x = Vector3d(0.0, 0.2, 0.0);
 }
 
 void Scene::init()
 {
-	sphereShape->init();
+	faceShape->init();
 	gelatin->init();
 }
 
 void Scene::tare()
 {
-	for(int i = 0; i < (int)spheres.size(); ++i) {
-		spheres[i]->tare();
+	for(int i = 0; i < (int)faces.size(); ++i) {
+		faces[i]->tare();
 	}
 	gelatin->tare();
 }
@@ -65,8 +66,8 @@ void Scene::tare()
 void Scene::reset()
 {
 	t = 0.0;
-	for(int i = 0; i < (int)spheres.size(); ++i) {
-		spheres[i]->reset();
+	for(int i = 0; i < (int)faces.size(); ++i) {
+		faces[i]->reset();
 	}
 	gelatin->reset();
 }
@@ -100,8 +101,8 @@ void Scene::step()
 	t += h;
 	
 	// Move the sphere
-	if(!spheres.empty()) {
-		auto s = spheres.front();
+	if(!faces.empty()) {
+		auto s = faces.front();
 		Vector3d x0 = s->x;
 		double radius = 0.5;
 		double a = 2.0*t;
@@ -111,14 +112,14 @@ void Scene::step()
 	}
 	
 	// Simulate the gelatin
-	gelatin->step(h, grav, spheres);
+	gelatin->step(h, grav, faces);
 }
 
 void Scene::draw(shared_ptr<MatrixStack> MV, const shared_ptr<Program> prog) const
 {
 	//glUniform3fv(prog->getUniform("kdFront"), 1, Vector3f(1.0, 1.0, 1.0).data());
-	for(int i = 0; i < (int)spheres.size(); ++i) {
-		spheres[i]->draw(MV, prog);
+	for(int i = 0; i < (int)faces.size(); ++i) {
+		faces[i]->draw(MV, prog);
 	}
 	gelatin->draw(MV, prog);
 }
